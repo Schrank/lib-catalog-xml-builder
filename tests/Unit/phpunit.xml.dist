@@ -1,0 +1,39 @@
+<phpunit
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="http://schema.phpunit.de/5.2/phpunit.xsd"
+        backupGlobals="true"
+        backupStaticAttributes="false"
+        bootstrap="./bootstrap.php"
+        cacheTokens="false"
+        colors="false"
+        convertErrorsToExceptions="true"
+        convertNoticesToExceptions="true"
+        convertWarningsToExceptions="true"
+        forceCoversAnnotation="true"
+        processIsolation="false"
+        stopOnError="false"
+        stopOnFailure="false"
+        stopOnIncomplete="false"
+        stopOnSkipped="false"
+        timeoutForSmallTests="1"
+        timeoutForMediumTests="10"
+        timeoutForLargeTests="60"
+        beStrictAboutOutputDuringTests="true"
+        beStrictAboutTestsThatDoNotTestAnything="true"
+        verbose="true">
+    <php>
+        <ini name="display_errors" value="On"/>
+        <ini name="display_startup_errors" value="On"/>
+    </php>
+    <testsuites>
+        <testsuite name="Catalog XML Builder Unit Test">
+            <directory>Suites</directory>
+            <exclude>Suites/XmlBuilder/ListingXmlTest.php</exclude>
+        </testsuite>
+    </testsuites>
+    <filter>
+        <whitelist>
+            <directory>../../lib/LizardsAndPumpkins/src</directory>
+        </whitelist>
+    </filter>
+</phpunit>
