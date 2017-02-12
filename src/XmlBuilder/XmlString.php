@@ -10,29 +10,19 @@ class XmlString
      */
     private $xml;
 
-    /**
-     * @param string $productXml
-     */
-    public function __construct($productXml)
+    public function __construct(string $productXml)
     {
         $this->xml = new \DOMDocument();
         $this->xml->loadXML($this->removeControlCharacters($productXml));
         $this->xml->formatOutput = true;
     }
 
-    /**
-     * @return string
-     */
-    public function getXml()
+    public function getXml(): string
     {
         return $this->xml->saveXML($this->xml->documentElement);
     }
 
-    /**
-     * @param string $productXml
-     * @return string
-     */
-    private function removeControlCharacters($productXml)
+    private function removeControlCharacters(string $productXml): string
     {
         return preg_replace('/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/', '', $productXml);
     }

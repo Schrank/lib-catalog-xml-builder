@@ -22,7 +22,7 @@ class XmlStringTest extends TestCase
     {
         $charactersToTest = array_merge(range(0x00, 0x09), [0x0B, 0x0C], range(0x0E, 0x1F), [0x7F]);
 
-        $xml = "<?xml version=\"1.0\"?><xml>\r\n";
+        $xml = '<?xml version="1.0"?><xml>';
         foreach ($charactersToTest as $c) {
             $xml .= chr($c);
         }
@@ -32,7 +32,21 @@ class XmlStringTest extends TestCase
         foreach ($charactersToTest as $c) {
             $this->assertNotContains(chr($c), $result);
         }
-        $this->assertNotContains("\r", $result);
+    }
+
+    public function testNewLineIsNotRemoved()
+    {
+        $xml = "<?xml version=\"1.0\"?><xml>\n</xml>";
+        $container = new XmlString($xml);
+        $result = $container->getXml();
         $this->assertContains("\n", $result);
+    }
+
+    public function testCarriageReturnIsRemovedByDomDocument()
+    {
+        $xml = "<?xml version=\"1.0\"?><xml>\r</xml>";
+        $container = new XmlString($xml);
+        $result = $container->getXml();
+        $this->assertNotContains("\r", $result);
     }
 }
