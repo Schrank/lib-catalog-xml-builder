@@ -3,11 +3,7 @@ declare(strict_types=1);
 
 namespace LizardsAndPumpkins\MagentoConnector\XmlBuilder;
 
-use LizardsAndPumpkins\MagentoConnector\XmlBuilder\Exception\StoreNotSetOnCategoryException;
-use LizardsAndPumpkins_MagentoConnector_Model_Export_MagentoConfig;
-use Mage_Catalog_Model_Category;
-use Mage_Core_Model_Store;
-use Mage_Core_Model_Website;
+use LizardsAndPumpkins\MagentoConnector\XmlBuilder\Exception\InvalidListDataException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -15,30 +11,11 @@ use PHPUnit\Framework\TestCase;
  */
 class ListingXmlTest extends TestCase
 {
-    /**
-     * @var LizardsAndPumpkins_MagentoConnector_Model_Export_MagentoConfig|\PHPUnit_Framework_MockObject_MockObject
-     */
-    private $stubConfig;
-
+    private $urlPath = 'my-seo-category-name';
     /**
      * @var ListingXml
      */
     private $listingXml;
-
-    /**
-     * @var Mage_Catalog_Model_Category|\PHPUnit_Framework_MockObject_MockObject
-     */
-    private $stubCategory;
-
-    /**
-     * @var Mage_Core_Model_Website|\PHPUnit_Framework_MockObject_MockObject
-     */
-    private $stubWebsite;
-
-    /**
-     * @var Mage_Core_Model_Store|\PHPUnit_Framework_MockObject_MockObject
-     */
-    private $stubStore;
 
     /**
      * @param string $string
@@ -65,45 +42,72 @@ class ListingXmlTest extends TestCase
 
     protected function setUp()
     {
-        $this->stubConfig = $this->createMock(LizardsAndPumpkins_MagentoConnector_Model_Export_MagentoConfig::class);
-        $this->stubConfig->method('getLocaleFrom')->willReturn('de_DE');
-        $this->listingXml = new ListingXml($this->stubConfig);
-
-        $this->stubWebsite = $this->createMock(Mage_Core_Model_Website::class);
-
-        $this->stubStore = $this->createMock(Mage_Core_Model_Store::class);
-        $this->stubStore->method('getCode')->willReturn('foo');
-
-        $this->stubCategory = $this->createMock(Mage_Catalog_Model_Category::class);
-        $this->stubCategory->method('getStore')->willReturn($this->stubStore);
-        $this->stubCategory->method('getData')->willReturnMap([
-            ['meta_title', null, 'This would only work in a <CDATA> section'],
-            ['description', null, 'Description with <strong>HTML</strong>'],
-            ['meta_description', null, 'this is a meta description'],
-            ['meta_keywords', null, 'meta keywords lap is cool'],
-        ]);
+        $this->listingXml = new ListingXml();
     }
 
-    public function testExceptionIsThrownIfStoreIsNotSetOnACategory()
+    private function getListData(): array
     {
-        $this->expectException(StoreNotSetOnCategoryException::class);
+        return [
+            'url_path' => $this->urlPath,
+            'locale'   => 'de_DE',
+            'website'  => 'foo',
+        ];
+    }
 
-        /** @var Mage_Catalog_Model_Category|\PHPUnit_Framework_MockObject_MockObject $stubCategory */
-        $stubCategory = $this->createMock(Mage_Catalog_Model_Category::class);
-        $this->listingXml->buildXml($stubCategory);
+    public function testExceptionIsThrownIfLocaleIsEmpty()
+    {
+        $this->expectException(InvalidListDataException::class);
+
+        $listData = [
+            'url_path' => 'lala',
+            'locale'   => '',
+            'website'  => 'foo',
+        ];
+        $this->listingXml->buildXml($listData);
+    }
+
+
+    public function testExceptionIsThrownIfWebsiteIsEmpty()
+    {
+        $this->expectException(InvalidListDataException::class);
+
+        $listData = [
+            'url_path' => 'lala',
+            'locale'   => 'lala',
+            'website'  => '',
+        ];
+
+        $this->listingXml->buildXml($listData);
+    }
+
+    public function testThrowsExceptionIfUrlPathIsEmpty()
+    {
+        $this->expectException(InvalidListDataException::class);
+
+        $listData = [
+            'url_path' => '',
+            'locale'   => 'lala',
+            'website'  => 'foo',
+        ];
+
+        $this->listingXml->buildXml($listData);
     }
 
     public function testXmlStringIsReturned()
     {
-        $this->assertInstanceOf(XmlString::class, $this->listingXml->buildXml($this->stubCategory));
+        $this->assertInstanceOf(
+            XmlString::class,
+            $this->listingXml->buildXml($this->getListData())
+        );
     }
 
     public function testListingNodeContainsUrlKeyAttribute()
     {
         $urlKey = 'foo';
-        $this->stubCategory->method('getUrlPath')->willReturn($urlKey);
+        $listData = $this->getListData();
+        $listData['url_path'] = $urlKey;
 
-        $result = $this->listingXml->buildXml($this->stubCategory);
+        $result = $this->listingXml->buildXml($listData);
 
         $this->assertRegExp(sprintf('/<listing [^>]*url_key="%s"/', $urlKey), $result->getXml());
     }
@@ -111,9 +115,7 @@ class ListingXmlTest extends TestCase
     public function testListingNodeContainsLocaleAttribute()
     {
         $locale = 'foo';
-        $this->stubConfig->method('getLocaleFrom')->willReturn($locale);
-
-        $result = $this->listingXml->buildXml($this->stubCategory);
+        $result = $this->listingXml->buildXml($this->getListData());
 
         $this->assertRegExp(sprintf('/<listing [^>]*locale="%"/', $locale), $result->getXml());
     }
@@ -121,46 +123,42 @@ class ListingXmlTest extends TestCase
     public function testListingNodeContainsWebsiteAttribute()
     {
         $storeCode = 'foo';
-        $this->stubStore->method('getCode')->willReturn($storeCode);
-
-        $result = $this->listingXml->buildXml($this->stubCategory);
+        $result = $this->listingXml->buildXml($this->getListData());
 
         $this->assertRegExp(sprintf('/<listing [^>]*website="%s"/', $storeCode), $result->getXml());
     }
 
     public function testListingNodeContainsAndCriteriaNode()
     {
-        $result = $this->listingXml->buildXml($this->stubCategory);
+        $result = $this->listingXml->buildXml($this->getListData());
         $this->assertContains('<criteria type="and">', $result->getXml());
     }
 
     public function testListingNodeContainsCategoryCriteria()
     {
-        $urlKey = 'foo';
-        $this->stubCategory->method('getUrlPath')->willReturn($urlKey);
-
-        $result = $this->listingXml->buildXml($this->stubCategory);
-        $expectedXml = sprintf('<attribute name="category" is="Equal">%s</attribute>', $urlKey);
+        $result = $this->listingXml->buildXml($this->getListData());
+        $expectedXml = sprintf('<attribute name="category" is="Equal">%s</attribute>', $this->urlPath);
 
         $this->assertContains($expectedXml, $result->getXml());
     }
 
     public function testListingNodeContainsStockAvailabilityCriteria()
     {
-        $result = $this->listingXml->buildXml($this->stubCategory);
+        $result = $this->listingXml->buildXml($this->getListData());
 
-        $expectedXml = <<<EOX
+        $expectedXml = <<<'HTML'
 <criteria type="or">
     <attribute name="stock_qty" is="GreaterThan">0</attribute>
     <attribute name="backorders" is="Equal">true</attribute>
 </criteria>
-EOX;
+HTML;
+
         $this->assertContains($this->removeXmlFormatting($expectedXml), $this->removeXmlFormatting($result->getXml()));
     }
 
     public function testListingNodeContainsAttributesNode()
     {
-        $result = $this->listingXml->buildXml($this->stubCategory);
+        $result = $this->listingXml->buildXml($this->getListData());
         $this->assertContains('<attributes>', $result->getXml());
     }
 
@@ -171,12 +169,11 @@ EOX;
      */
     public function testAttributesNodeContainsAttributeWithValue($attributeCode, $attributeValue)
     {
-        $this->stubCategory->method('getData')->willReturnMap([
-            [$attributeCode, null, $attributeValue],
-        ]);
+        $listData = $this->getListData();
+        $listData[$attributeCode] = $attributeValue;
 
-        $listingXml = $this->listingXml->buildXml($this->stubCategory);
-        $attributes = $this->getListingAttributesAsArray($listingXml->getXml());
+        $result = $this->listingXml->buildXml($listData);
+        $attributes = $this->getListingAttributesAsArray($result->getXml());
 
         $this->assertArrayHasKey($attributeCode, $attributes);
         $this->assertSame($attributeValue, $attributes[$attributeCode]);

@@ -3,37 +3,18 @@ declare(strict_types=1);
 
 namespace LizardsAndPumpkins\MagentoConnector\XmlBuilder;
 
-use LizardsAndPumpkins\MagentoConnector\XmlBuilder\Exception\StoreNotSetOnCategoryException;
-use LizardsAndPumpkins_MagentoConnector_Model_Export_MagentoConfig;
-use Mage_Catalog_Model_Category;
-use Mage_Core_Model_Store;
+use LizardsAndPumpkins\MagentoConnector\XmlBuilder\Exception\InvalidListDataException;
 
 class ListingXml
 {
     const CONDITION_AND = 'and';
     const URL_KEY_REPLACE_PATTERN = '#[^a-zA-Z0-9:_\-./]#';
 
-    /**
-     * @var LizardsAndPumpkins_MagentoConnector_Model_Export_MagentoConfig
-     */
-    private $config;
-
-    public function __construct(LizardsAndPumpkins_MagentoConnector_Model_Export_MagentoConfig $config)
+    public function buildXml(array $category): XmlString
     {
-        $this->config = $config;
-    }
+        $this->validateData($category);
 
-    /**
-     * @param Mage_Catalog_Model_Category $category
-     * @return XmlString
-     */
-    public function buildXml(Mage_Catalog_Model_Category $category)
-    {
-        if (!($category->getStore() instanceof Mage_Core_Model_Store)) {
-            throw new StoreNotSetOnCategoryException('Store must be set on category.');
-        }
-
-        $urlPath = $this->normalizeUrl($category->getUrlPath());
+        $urlPath = $this->normalizeUrl($category['url_path']);
         $xml = new \XMLWriter();
         $xml->openMemory();
         $xml->setIndent(true);
@@ -41,8 +22,8 @@ class ListingXml
         $xml->startElement('listing');
 
         $xml->writeAttribute('url_key', $urlPath);
-        $xml->writeAttribute('locale', $this->config->getLocaleFrom($category->getStore()));
-        $xml->writeAttribute('website', $category->getStore()->getCode());
+        $xml->writeAttribute('locale', $category['locale']);
+        $xml->writeAttribute('website', $category['website']);
 
         $xml->startElement('criteria');
         $xml->writeAttribute('type', self::CONDITION_AND);
@@ -81,7 +62,7 @@ class ListingXml
 
     /**
      * @param \XMLWriter $xml
-     * @param string $urlPath
+     * @param string     $urlPath
      */
     private function writeCategoryCriteriaXml(\XMLWriter $xml, $urlPath)
     {
@@ -94,9 +75,9 @@ class ListingXml
 
     /**
      * @param \XMLWriter $xml
-     * @param Mage_Catalog_Model_Category $category
+     * @param array      $category
      */
-    private function writeCategoryAttributesXml(\XMLWriter $xml, Mage_Catalog_Model_Category $category)
+    private function writeCategoryAttributesXml(\XMLWriter $xml, array $category)
     {
         // TODO: Put into configuration
         $attributeNames = ['meta_title', 'description', 'meta_description', 'meta_keywords'];
@@ -106,9 +87,9 @@ class ListingXml
         array_map(function ($attributeName) use ($xml, $category) {
             $xml->startElement('attribute');
             $xml->writeAttribute('name', $attributeName);
-            $xml->startCdata();
-            $xml->text($category->getData($attributeName));
-            $xml->endCdata();
+            $xml->startCData();
+            $xml->text($category[$attributeName] ?? '');
+            $xml->endCData();
             $xml->endElement();
         }, $attributeNames);
 
@@ -122,5 +103,20 @@ class ListingXml
     private function normalizeUrl($urlPath)
     {
         return preg_replace(self::URL_KEY_REPLACE_PATTERN, '_', $urlPath);
+    }
+
+    private function validateData(array $listData)
+    {
+        if (!$listData['website']) {
+            throw new InvalidListDataException('List data must contain a website.');
+        }
+
+        if (!$listData['locale']) {
+            throw new InvalidListDataException('List data must contain a locale.');
+        }
+
+        if (!$listData['url_path']) {
+            throw new InvalidListDataException('List data must contain a url path.');
+        }
     }
 }

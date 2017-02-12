@@ -28,7 +28,6 @@
     <testsuites>
         <testsuite name="Catalog XML Builder Unit Test">
             <directory>Suites</directory>
-            <exclude>Suites/XmlBuilder/ListingXmlTest.php</exclude>
         </testsuite>
     </testsuites>
     <filter>
