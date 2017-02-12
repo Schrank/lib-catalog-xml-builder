@@ -17,4 +17,22 @@ class XmlStringTest extends TestCase
         $this->assertSame('<xml/>', $container->getXml());
         $this->assertNotContains('<?xml', $container->getXml());
     }
+
+    public function testRemovesControlCharacters()
+    {
+        $charactersToTest = array_merge(range(0x00, 0x09), [0x0B, 0x0C], range(0x0E, 0x1F), [0x7F]);
+
+        $xml = "<?xml version=\"1.0\"?><xml>\r\n";
+        foreach ($charactersToTest as $c) {
+            $xml .= chr($c);
+        }
+        $xml .= '</xml>';
+        $container = new XmlString($xml);
+        $result = $container->getXml();
+        foreach ($charactersToTest as $c) {
+            $this->assertNotContains(chr($c), $result);
+        }
+        $this->assertNotContains("\r", $result);
+        $this->assertContains("\n", $result);
+    }
 }
