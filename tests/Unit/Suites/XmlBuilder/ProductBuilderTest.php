@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace LizardsAndPumpkins\MagentoConnector\XmlBuilder;
 
+use LizardsAndPumpkins\MagentoConnector\XmlBuilder\Exception\InvalidImageDefinitionException;
 use PHPUnit\Framework\TestCase;
 
 /**
