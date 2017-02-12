@@ -61,6 +61,25 @@ class StreamWriterTest extends TestCase
             'ssh2.exec'      => ['ssh2.exec://'],
             'ssh2.tunnel'    => ['ssh2.tunnel://'],
         ];
-
     }
+}
+
+function file_put_contents(string $filename, mixed $data, int $flags = 0, resource $context)
+{
+    return \file_put_contents($filename, $data, $flags, $context);
+}
+
+function fwrite(resource $handle, string $string, int $length)
+{
+    return \fwrite($handle, $string, $length);
+}
+
+function fopen(string $filename, string $mode, bool $use_include_path = false, resource $context)
+{
+    return \fopen($filename, $mode, $use_include_path, $context);
+}
+
+function fclose(resource $handle)
+{
+    return \fclose($handle);
 }

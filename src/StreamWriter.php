@@ -30,7 +30,6 @@ class StreamWriter
         $this->target = $this->suffixPathWithDirectorySeparator(dirname($target)) . $this->filename;
 
         $this->validateTarget();
-
     }
 
     private function suffixPathWithDirectorySeparator(string $path): string
@@ -81,5 +80,10 @@ class StreamWriter
     public function getFilename(): string
     {
         return $this->filename;
+    }
+
+    public function finish()
+    {
+        fclose($this->getUploadStream());
     }
 }
