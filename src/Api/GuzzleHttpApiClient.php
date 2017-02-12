@@ -9,6 +9,8 @@ use GuzzleHttp\Exception\ClientException as GuzzleClientException;
 use GuzzleHttp\Exception\ServerException as GuzzleServerException;
 use GuzzleHttp\Psr7\Request as Psr7Request;
 use GuzzleHttp\Psr7\Response as Psr7Response;
+use LizardsAndPumpkins\MagentoConnector\Api\Exception\InvalidHostException;
+use LizardsAndPumpkins\MagentoConnector\Api\Exception\RequestFailedException;
 
 class GuzzleHttpApiClient implements HttpApiClient
 {

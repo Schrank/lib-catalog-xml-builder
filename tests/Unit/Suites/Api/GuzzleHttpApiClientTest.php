@@ -10,6 +10,8 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use LizardsAndPumpkins\MagentoConnector\Api\Exception\InvalidHostException;
+use LizardsAndPumpkins\MagentoConnector\Api\Exception\RequestFailedException;
 use PHPUnit\Framework\TestCase;
 
 class GuzzleHttpApiClientTest extends TestCase
@@ -36,7 +38,7 @@ class GuzzleHttpApiClientTest extends TestCase
     private $mockHandler;
 
     /**
-     * @var GuzzleAdapter
+     * @var GuzzleHttpApiClient
      */
     private $client;
 

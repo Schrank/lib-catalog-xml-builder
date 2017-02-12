@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace LizardsAndPumpkins\MagentoConnector\Api;
 
+use LizardsAndPumpkins\MagentoConnector\Api\Exception\InvalidUrlException;
+
 class Api
 {
     const API_ENDPOINT_CATALOG_IMPORT = 'catalog_import/';
@@ -55,14 +57,6 @@ class Api
         if ($dir !== '.') {
             throw new \UnexpectedValueException(sprintf('Filename "%s" should be a filename, no path.', $filename));
         }
-    }
-
-    public function triggerProductStockImport(string $filename)
-    {
-        $headers = ['Accept' => 'application/vnd.lizards-and-pumpkins.multiple_product_stock_quantity.v1+json'];
-
-        $url = $this->url . self::API_ENDPOINT_STOCK_UPDATE;
-        $this->sendApiRequestWithFilename($filename, $url, $headers);
     }
 
     /**
